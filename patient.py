@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
+import random
 
 
 @dataclass
@@ -32,9 +33,23 @@ class Patient:
     def end_time(self):
         return None if self.end is None else to_clock(self.end)
 
+#To represent a surge in emergency patients
+
+emergency = False
+count = random.randint(1, 10)
+if (count > 9):
+    emergency = True
 
 # ---------------------------------------------------------------- settings
-URGENCY_MIX = {1: 0.10, 2: 0.20, 3: 0.40, 4: 0.30}   # share of patients per level (must sum to 1)
+
+if (emergency == True):
+    URGENCY_MIX =  {1: 0.40, 2: 0.45, 3: 0.10, 4: 0.5} #different ration of urgencies during an emergency surge
+
+else:
+    URGENCY_MIX = {1: 0.10, 2: 0.20, 3: 0.40, 4: 0.30}   # share of patients per level (must sum to 1)
+
+
+
 URGENCY_WEIGHT = {1: 100, 2: 50, 3: 20, 4: 5}        # starting priority points per level
 TREATMENT_MINUTES = {                                # (shortest, longest) treatment time per level
     1: (60, 180),
@@ -52,7 +67,13 @@ AGE_BONUS = 10              # extra priority points for the youngest and oldest 
 CHILD_AGE = 12              # younger than this gets the bonus
 ELDERLY_AGE = 65            # this age or older gets the bonus
 
-CAPACITY = {"bed": 6, "icu_bed": 4, "doctor": 8, "nurse": 14}
+x = 100 #make it arbitrary
+
+if (emergency == True):
+    CAPACITY = {"bed": x*0.3, "icu_bed": x*0.55, "doctor": 8, "nurse": 14}
+
+else:
+    CAPACITY = {"bed": x*0.6, "icu_bed": x*0.4, "doctor": 8, "nurse": 14}
 
 NEEDS_BY_URGENCY = {
     1: {"icu_bed": 1, "doctor": 1, "nurse": 2},

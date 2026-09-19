@@ -1,5 +1,5 @@
 import random
-from patient import Patient, URGENCY_MIX, TREATMENT_MINUTES, ARRIVALS_PER_HOUR, NEEDS_BY_URGENCY
+from patient import Patient, URGENCY_MIX, TREATMENT_MINUTES, ARRIVALS_PER_HOUR, NEEDS_BY_URGENCY, emergency
 
 
 def generate_patients(n, seed):
