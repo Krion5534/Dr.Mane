@@ -111,6 +111,9 @@ async def start_simulation():
 async def get_resources():
     docs = list(resource_manager.doctors.values())
 
+    doctor_available = sum(1 for d in docs if d.is_available)
+    doctor_total = len(docs)
+
     by_specialty = {}
     for state in docs:
         spec = state.doctor.speciality
@@ -119,21 +122,29 @@ async def get_resources():
         if state.is_available:
             by_specialty[spec]["available"] += 1
 
+    # exclude "doctor" from the generic free/capacity dict since doctors
+    # are tracked via DoctorState, not resource_manager.free
+    generic_resources = {
+        r: {"free": resource_manager.free.get(r, 0), "capacity": cap}
+        for r, cap in resource_manager.capacity.items()
+        if r != "doctor"
+    }
+    generic_resources["doctor"] = {"free": doctor_available, "capacity": doctor_total}
+
     return {
         "clock": hospital_clock,
         "clock_time": to_clock(hospital_clock),
-        "resources": {
-            r: {"free": resource_manager.free.get(r, 0), "capacity": cap}
-            for r, cap in resource_manager.capacity.items()
-        },
+        "resources": generic_resources,
         "doctors": {
-            "total": len(docs),
-            "available": sum(1 for d in docs if d.is_available),
-            "busy": sum(1 for d in docs if not d.is_available),
+            "total": doctor_total,
+            "available": doctor_available,
+            "busy": doctor_total - doctor_available,
             "by_specialty": by_specialty,
         },
         "waiting_count": sum(1 for p in patients.values() if p.start is None and not p.died),
     }
+
+    
 # ------------------------------------------------------------------
 # Request models
 # ------------------------------------------------------------------
