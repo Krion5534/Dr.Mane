@@ -1,8 +1,8 @@
 # MedFlow: Hospital Resource Allocation Simulator
 
-Built for **Hack-a-Matics** by `<team name>` (`<member names>`).
+Built for **Hack-a-Matics** by `Big P` (`Shanmukha, Pallav E, Prajwal Sathyaprakash`).
 
-MedFlow simulates one day in a hospital’s emergency and critical-care wing. Patients arrive at random, wait in a queue, and are given beds, ICU beds, nurses and a doctor of the right specialty. A priority-based scheduler decides who is treated next when resources run short. The simulation runs one minute at a time, so a live dashboard can watch it, and staff can add patients by hand while it is running.
+MedFlow simulates one day in a hospital's emergency and critical-care wing. Patients arrive at random, wait in a queue, and are given beds, ICU beds, nurses and a doctor of the right specialty. A priority-based scheduler decides who is treated next when resources run short. The simulation runs one minute at a time, so a live dashboard can watch it, and staff can add patients by hand while it is running.
 
 ## Features
 
@@ -21,25 +21,25 @@ MedFlow simulates one day in a hospital’s emergency and critical-care wing. Pa
 ## Model at a glance
 
 | Level | Meaning | Share of arrivals (surge) | Priority weight | Treatment time | Needs | Base mortality | Extra risk per minute waited |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+|---|---|---|---|---|---|---|---|
 | 1 | Critical | 10% (15%) | 100 | 60-180 min | ICU bed, doctor, 2 nurses | 10-17% | 0.3 points |
 | 2 | High | 20% (25%) | 50 | 45-120 min | ICU bed, doctor, 2 nurses | 5-12% | 0.15 points |
 | 3 | Medium | 40% (35%) | 20 | 30-90 min | bed, doctor, nurse | 2-5% | 0.05 points |
 | 4 | Low | 30% (25%) | 5 | 15-45 min | bed, nurse | 0-2% | 0 |
 
 | Resource | Dead hours | Normal | Peak |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | Regular beds | 25 | 25 | 25 |
 | ICU beds | 20 | 20 | 20 |
 | Doctors on shift | 30 | 40 | 60 |
 | Nurses on shift | 20 | 24 | 30 |
 
-**Mortality.** A patient’s death chance is their base risk, plus the extra risk for every minute they waited, plus 7 points if they were moved from an ICU bed to a regular bed (capped at 100). It is rolled once, when treatment ends.
+**Mortality.** A patient's death chance is their base risk, plus the extra risk for every minute they waited, plus 7 points if they were moved from an ICU bed to a regular bed (capped at 100). It is rolled once, when treatment ends.
 
 ## Project structure
 
 | File | What it does |
-| --- | --- |
+|---|---|
 | `patient.py` | `Patient` and `Doctor` classes, all settings, clock helpers, diagnosis and doctor sampling |
 | `generator.py` | Random patient generation and surge windows |
 | `resources.py` | `HospitalResourceManager`: beds, ICU beds, nurses, doctor assignment and shifts, frontend snapshot |
@@ -64,11 +64,8 @@ state = sim.snapshot()                # JSON-ready dict
 options = get_form_options()          # values for the urgency and diagnosis dropdowns
 ```
 
-- **Manual patients** arrive at the current minute and join the queue; the scheduler admits them on the next step. Blank names become “Patient
-    
-    ”. Ages and urgency may be given as strings (as HTML forms send them), and an empty diagnosis means “not yet diagnosed” (a general doctor is assigned). Invalid input raises `ValueError`.
-    
-- **`snapshot()`** contains the clock, free beds, ICU beds and nurses, every doctor’s status and current patient, the waiting room (with wait times and required specialty) and patients in treatment.
+- **Manual patients** arrive at the current minute and join the queue; the scheduler admits them on the next step. Blank names become "Patient <id>". Ages and urgency may be given as strings (as HTML forms send them), and an empty diagnosis means "not yet diagnosed" (a general doctor is assigned). Invalid input raises `ValueError`.
+- **`snapshot()`** contains the clock, free beds, ICU beds and nurses, every doctor's status and current patient, the waiting room (with wait times and required specialty) and patients in treatment.
 - `admit_patient(patient, manager, clock)` returns `(admitted, doctor_id)` and changes nothing unless the patient can be fully admitted.
 
 ## Testing
@@ -85,10 +82,10 @@ During development we checked the following with ad-hoc scripts (they are not co
 
 These came from an **earlier version of the model** (a single pool of doctors with no specialties, a 30-arrivals-per-hour hospital with 35 doctors and 60 nurses, and slightly different mortality ranges). The comparison scripts were removed when doctors, specialties and diagnoses were added, so **the numbers below cannot be reproduced with the current code**. Treat them as findings about the scheduling idea, not about this exact model.
 
-*Priority scheduling vs. first-come-first-served (FCFS), 24 simulated days per row, expected deaths per day (each patient’s death chance summed, so there is no dice-roll noise).* In that version, level 1 patients could take a regular bed immediately and level 2 patients after waiting 120 minutes.
+*Priority scheduling vs. first-come-first-served (FCFS), 24 simulated days per row, expected deaths per day (each patient's death chance summed, so there is no dice-roll noise).* In that version, level 1 patients could take a regular bed immediately and level 2 patients after waiting 120 minutes.
 
 | Hospital load | Level 1 average wait, FCFS to priority | Deaths saved per day, literature-based waiting harm | Deaths saved per day, 4x that harm |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | Normal (25 beds, 20 ICU) | 21 to 1.4 min | -0.4 +/- 0.05 | +0.8 +/- 0.2 |
 | Hot (20 beds, 16 ICU) | 78 to 1.8 min | +0.1 +/- 0.3 | +5.3 +/- 1.6 |
 | Very hot (17 beds, 13 ICU) | 217 to 15 min | +1.4 +/- 0.3 (3%) | +13.0 +/- 1.9 (19%) |
@@ -121,12 +118,11 @@ What we took from it:
 - A load-aware fallback rule (downgrade only when the ICU queue is long) and an exact optimizer with the ICU-vs-regular-bed choice inside the model.
 - Arrival rates that vary by time of day, operating rooms, and multiple departments.
 
-## Sources (please verify before submitting)
+## Sources 
 
 - Chalfin et al., *Critical Care Medicine*, 2007: ICU transfer delays of 6 hours or more were associated with higher mortality (in-hospital mortality 17.4% vs 12.9%).
 - A Taiwanese cohort study of mechanically ventilated emergency patients, and a Dutch national ICU registry study, both reported higher mortality with longer emergency-to-ICU waits.
 - A national ICU survey in Korea (*Acute and Critical Care*), used as a rough guide to ICU bed share and occupancy.
+- El Camino Hospital Records
 
-## Credits and AI assistance
 
-Built during Hack-a-Matics by `<team name>`. An AI assistant (Claude) was used for explanations, code review and bug fixes, the manual-patient and `HospitalSimulation` code, test and experiment scripts, and drafting this README. The core scheduling logic (priority scoring and priority-based admission) was written by the team. *(Edit this section so it matches who actually wrote what.)*
