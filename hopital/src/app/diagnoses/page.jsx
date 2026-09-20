@@ -46,18 +46,10 @@ export default function DiagnosesPage() {
     };
   }, []);
 
-  const getStatus = (p) => {
-    const sim = simState.current[p.id];
-    if (!sim) return { label: "Waiting", pct: 0 };
-
-    const elapsedSec = (Date.now() - sim.startedAt) / 1000;
-    const durationSec = p.duration; // minutes treated as seconds for demo speed
-
-    if (elapsedSec >= durationSec) {
-      return { label: "Diagnosed", pct: 100 };
-    }
-    return { label: "In Treatment", pct: Math.min(99, (elapsedSec / durationSec) * 100) };
-  };
+const getStatus = (p) => ({
+  label: p.status,
+  pct: p.end ? 100 : p.start ? Math.min(99, ((hospital_clock_estimate - p.start) / p.duration) * 100) : 0,
+});
 
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())

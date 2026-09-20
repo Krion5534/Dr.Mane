@@ -2,7 +2,84 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 import random
+import asyncio
 
+TICK_SECONDS = 1        # real seconds per tick
+MINUTES_PER_TICK = 1    # sim minutes advanced per tick
+
+def patient_to_json(patient: Patient) -> dict:
+    if patient.died:
+        status = "Died"
+    elif patient.end is not None:
+        status = "Diagnosed"
+    elif patient.start is not None:
+        status = "In Treatment"
+    else:
+        status = "Waiting"
+
+    return {
+        "id": patient.id,
+        "name": patient.name,
+        "age": patient.age,
+        "urgency": patient.urgency,
+        "diagnosis": patient.diagnosis,
+        "required_specialty": patient.required_specialty,
+        "status": status,          # <-- add this line
+        "arrival": patient.arrival,
+        "arrival_time": patient.arrival_time,
+        "start": patient.start,
+        "start_time": patient.start_time,
+        "end": patient.end,
+        "end_time": patient.end_time,
+        "wait": patient.wait,
+        "death_chance": round(patient.death_chance, 1),
+        "needs": patient.needs,
+        "duration": patient.duration,
+        "during_surge": patient.during_surge,
+        "mortality_chance": patient.mortality_chance,
+        "downgraded": patient.downgraded,
+        "died": patient.died,
+    }
+    
+
+
+async def simulation_loop():
+    global hospital_clock
+
+    while True:
+        await asyncio.sleep(TICK_SECONDS)
+        hospital_clock += MINUTES_PER_TICK
+
+        changed = False
+
+        for patient in patients.values():
+
+            if patient.died:
+                continue
+
+            # no resource checks, everyone starts immediately for demo purposes
+            if patient.start is None:
+                patient.start = hospital_clock
+                changed = True
+                continue
+
+            if patient.end is None and hospital_clock - patient.start >= patient.duration:
+                patient.end = hospital_clock
+                changed = True
+
+                # roll for death based on death_chance at completion
+                if random.uniform(0, 100) < patient.death_chance:
+                    patient.died = True
+
+        if changed:
+            await broadcast_patients()
+
+
+@router.on_event("startup")
+async def start_simulation():
+    asyncio.create_task(simulation_loop())
+
+    
 from app.models.patient import (
     Patient,
     NEEDS_BY_URGENCY,
@@ -357,3 +434,5 @@ async def patient_websocket(websocket: WebSocket):
     except Exception:
 
         connected_clients.discard(websocket)
+
+
