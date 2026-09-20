@@ -9,101 +9,94 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { TrendingUpIcon, TrendingDownIcon } from "lucide-react"
+import { AlertTriangleIcon, UsersIcon, BabyIcon, HeartPulseIcon } from "lucide-react"
 
-export function SectionCards() {
+export function SectionCards({ patients = [] }) {
+  const total = patients.length
+  const critical = patients.filter((p) => p.urgency === 1).length
+  const pediatric = patients.filter((p) => p.age < 16).length
+  const avgDeathChance = total
+    ? (patients.reduce((sum, p) => sum + p.death_chance, 0) / total).toFixed(1)
+    : 0
+
   return (
     <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>Total Patients</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            {total.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +12.5%
+              <UsersIcon />
+              Live
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
+          <div className="line-clamp-1 flex gap-2 font-medium">Currently admitted</div>
+          <div className="text-muted-foreground">Across all urgency levels</div>
+        </CardFooter>
+      </Card>
+
+      <Card className="@container/card">
+        <CardHeader>
+          <CardDescription>Critical Cases</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            {critical.toLocaleString()}
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline">
+              <AlertTriangleIcon />
+              Urgency 1
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">Needs immediate attention</div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            {total ? ((critical / total) * 100).toFixed(1) : 0}% of total
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>Pediatric Patients</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            {pediatric.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingDownIcon
-              />
-              -20%
+              <BabyIcon />
+              Under 16
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period{" "}
-            <TrendingDownIcon className="size-4" />
-          </div>
+          <div className="line-clamp-1 flex gap-2 font-medium">Routed to Pediatrician</div>
           <div className="text-muted-foreground">
-            Acquisition needs attention
+            {total ? ((pediatric / total) * 100).toFixed(1) : 0}% of total
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>Avg. Death Chance</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+            {avgDeathChance}%
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +12.5%
+              <HeartPulseIcon />
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +4.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="line-clamp-1 flex gap-2 font-medium">Across all patients</div>
+          <div className="text-muted-foreground">Rises with wait time</div>
         </CardFooter>
       </Card>
     </div>
