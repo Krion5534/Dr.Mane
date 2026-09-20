@@ -31,8 +31,6 @@ export function AppSidebar() {
 
             <SidebarContent className="px-3">
                 <SidebarMenu>
-
-
                     {/* Dashboard */}
                     <SidebarMenuItem>
                         <SidebarMenuButton>
