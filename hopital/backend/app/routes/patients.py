@@ -7,40 +7,7 @@ import asyncio
 TICK_SECONDS = 1        # real seconds per tick
 MINUTES_PER_TICK = 1    # sim minutes advanced per tick
 
-def patient_to_json(patient: Patient) -> dict:
-    if patient.died:
-        status = "Died"
-    elif patient.end is not None:
-        status = "Diagnosed"
-    elif patient.start is not None:
-        status = "In Treatment"
-    else:
-        status = "Waiting"
 
-    return {
-        "id": patient.id,
-        "name": patient.name,
-        "age": patient.age,
-        "urgency": patient.urgency,
-        "diagnosis": patient.diagnosis,
-        "required_specialty": patient.required_specialty,
-        "status": status,          # <-- add this line
-        "arrival": patient.arrival,
-        "arrival_time": patient.arrival_time,
-        "start": patient.start,
-        "start_time": patient.start_time,
-        "end": patient.end,
-        "end_time": patient.end_time,
-        "wait": patient.wait,
-        "death_chance": round(patient.death_chance, 1),
-        "needs": patient.needs,
-        "duration": patient.duration,
-        "during_surge": patient.during_surge,
-        "mortality_chance": patient.mortality_chance,
-        "downgraded": patient.downgraded,
-        "died": patient.died,
-    }
-    
 
 
 async def simulation_loop():
@@ -145,9 +112,14 @@ connected_clients: set[WebSocket] = set()
 # ------------------------------------------------------------------
 
 def patient_to_json(patient: Patient) -> dict:
-    """
-    Convert Patient into JSON-safe data for the frontend.
-    """
+    if patient.died:
+        status = "Died"
+    elif patient.end is not None:
+        status = "Diagnosed"
+    elif patient.start is not None:
+        status = "In Treatment"
+    else:
+        status = "Waiting"
 
     return {
         "id": patient.id,
@@ -156,29 +128,23 @@ def patient_to_json(patient: Patient) -> dict:
         "urgency": patient.urgency,
         "diagnosis": patient.diagnosis,
         "required_specialty": patient.required_specialty,
-
+        "status": status,          # <-- add this line
         "arrival": patient.arrival,
         "arrival_time": patient.arrival_time,
-
         "start": patient.start,
         "start_time": patient.start_time,
-
         "end": patient.end,
         "end_time": patient.end_time,
-
         "wait": patient.wait,
         "death_chance": round(patient.death_chance, 1),
-
         "needs": patient.needs,
-
         "duration": patient.duration,
-
         "during_surge": patient.during_surge,
         "mortality_chance": patient.mortality_chance,
-
         "downgraded": patient.downgraded,
         "died": patient.died,
     }
+    
 
 
 async def broadcast_patients():
