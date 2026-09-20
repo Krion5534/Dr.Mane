@@ -27,12 +27,15 @@ import {
 } from "@/components/ui/collapsible";
 
 import { AddPatient } from "@/components/patient/Add";
+import { useRouter } from "next/navigation";
 
 
 export function AppSidebar() {
     const [addPatientOpen, setAddPatientOpen] = useState(false);
+    const router = useRouter();
 
     return (
+        <div>
         <Sidebar>
 
             <SidebarHeader className="h-14" />
@@ -42,7 +45,7 @@ export function AppSidebar() {
 
                     {/* Dashboard */}
                     <SidebarMenuItem>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton onClick={()=>router.push('/')}>
                             <LayoutDashboard />
                             <span>Dashboard</span>
                         </SidebarMenuButton>
@@ -127,5 +130,11 @@ export function AppSidebar() {
             <SidebarFooter />
 
         </Sidebar>
+
+<AddPatient
+    open={addPatientOpen}
+    onOpenChange={setAddPatientOpen}
+/>
+</div>
     );
 }

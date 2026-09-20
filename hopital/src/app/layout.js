@@ -43,7 +43,7 @@ export default function RootLayout({ children }) {
                 className="flex items-center gap-2 font-semibold"
               >
                 <Plus />
-                <span>Hospital</span>
+                <span>El Camino</span>
               </Link>
 
               <div className="ml-auto">
