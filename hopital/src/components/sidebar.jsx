@@ -99,22 +99,22 @@ export function AppSidebar() {
 
                             <CollapsibleTrigger
                                 render={<SidebarMenuButton />}
-                            >
-                                <span>Doctors</span>
+                             >
+                                <span>Diagnoses</span>
                                 <ChevronDown className="ml-auto" />
                             </CollapsibleTrigger>
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
 
-                                    <SidebarMenuSubItem>
+                                    {/* <SidebarMenuSubItem>
                                         <SidebarMenuSubButton>
                                             Add
                                         </SidebarMenuSubButton>
-                                    </SidebarMenuSubItem>
+                                    </SidebarMenuSubItem> */}
 
                                     <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton>
+                                        <SidebarMenuSubButton onClick={()=>router.push('/diagnoses')}>
                                             Manage
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
