@@ -42,11 +42,6 @@ async def simulation_loop():
             await broadcast_patients()
 
 
-@router.on_event("startup")
-async def start_simulation():
-    asyncio.create_task(simulation_loop())
-
-    
 from app.models.patient import (
     Patient,
     NEEDS_BY_URGENCY,
@@ -176,6 +171,12 @@ async def broadcast_patients():
 # Admit patient
 # ------------------------------------------------------------------
 
+@router.on_event("startup")
+async def start_simulation():
+    asyncio.create_task(simulation_loop())
+
+    
+    
 @router.post("/admit")
 async def admit_patient(request: AdmitPatientRequest):
 
@@ -400,5 +401,6 @@ async def patient_websocket(websocket: WebSocket):
     except Exception:
 
         connected_clients.discard(websocket)
+
 
 
