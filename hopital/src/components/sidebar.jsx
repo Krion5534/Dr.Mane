@@ -1,3 +1,4 @@
+"use client";
 import {
     Sidebar,
     SidebarGroup,
@@ -22,9 +23,14 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { useRouter } from "next/navigation";
+import { AddPatient } from "./patient/Add";
 
 
 export function AppSidebar() {
+
+    const router = useRouter();
+
     return (
         <Sidebar>
             <SidebarHeader className="h-14" />
@@ -43,19 +49,23 @@ export function AppSidebar() {
                     {/* Patients */}
                     <SidebarMenuItem>
                         <Collapsible defaultOpen>
-                            <CollapsibleTrigger className="w-full">
-                                <SidebarMenuButton>
-                                    <span>Patients</span>
-                                    <ChevronDown className="ml-auto" />
-                                </SidebarMenuButton>
+                            <CollapsibleTrigger
+                                render={
+                                    <SidebarMenuButton />
+                                }
+                            >
+                                <span>Patients</span>
+                                <ChevronDown className="ml-auto" />
                             </CollapsibleTrigger>
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
                                     <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton>
+                                        {/* <SidebarMenuSubButton onClick={()=>router.push('/patients/add')}>
                                             Add
-                                        </SidebarMenuSubButton>
+                                        </SidebarMenuSubButton> */}
+
+                                        <AddPatient />
                                     </SidebarMenuSubItem>
 
                                     <SidebarMenuSubItem>
@@ -72,11 +82,13 @@ export function AppSidebar() {
                     {/* Doctors */}
                     <SidebarMenuItem>
                         <Collapsible defaultOpen>
-                            <CollapsibleTrigger className="w-full">
-                                <SidebarMenuButton>
-                                    <span>Doctors</span>
-                                    <ChevronDown className="ml-auto" />
-                                </SidebarMenuButton>
+                            <CollapsibleTrigger
+                                render={
+                                    <SidebarMenuButton />
+                                }
+                            >
+                                <span>Doctors</span>
+                                <ChevronDown className="ml-auto" />
                             </CollapsibleTrigger>
 
                             <CollapsibleContent>
