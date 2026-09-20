@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-from patient import Doctor, Patient, to_clock
+from app.models.patient import Doctor, Patient, to_clock
 
 
 def _patient_summary(p: Patient) -> dict:
