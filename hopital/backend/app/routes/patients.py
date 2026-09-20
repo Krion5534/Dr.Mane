@@ -4,9 +4,39 @@ from typing import Optional
 import random
 import asyncio
 
-TICK_SECONDS = 1        # real seconds per tick
-MINUTES_PER_TICK = 1    # sim minutes advanced per tick
+from app.models.patient import (
+    Patient,
+    NEEDS_BY_URGENCY,
+    MORTALITY_RANGE,
+    TREATMENT_MINUTES,
+    CAPACITY,
+    DOCTOR_COUNT_NORMAL,
+    sample_diagnosis,
+    to_clock,
+    generate_doctors,
+)
 
+from app.models.resources import HospitalResourceManager
+
+# ------------------------------------------------------------------
+# Resource manager (beds, ICU beds, doctors, nurses)
+# ------------------------------------------------------------------
+
+doctors = generate_doctors(DOCTOR_COUNT_NORMAL, seed=42)
+resource_manager = HospitalResourceManager(CAPACITY, doctors)
+
+# Track which doctor is treating which patient so we can release them later
+patient_doctor: dict[int, int] = {}
+
+
+TICK_SECONDS = 60     # 1 real minute = 1 sim minute, so a 27-min duration takes 27 real minutes
+MINUTES_PER_TICK = 1
+
+
+router = APIRouter(
+    prefix="/patients",
+    tags=["patients"],
+)
 
 
 
@@ -19,45 +49,91 @@ async def simulation_loop():
 
         changed = False
 
+        # --------------------------------------------------------
+        # 1. Finish anyone whose treatment duration has elapsed
+        # --------------------------------------------------------
         for patient in patients.values():
-
-            if patient.died:
+            if patient.died or patient.end is not None:
                 continue
 
-            # no resource checks, everyone starts immediately for demo purposes
-            if patient.start is None:
-                patient.start = hospital_clock
-                changed = True
-                continue
-
-            if patient.end is None and hospital_clock - patient.start >= patient.duration:
+            if patient.start is not None and hospital_clock - patient.start >= patient.duration:
                 patient.end = hospital_clock
                 changed = True
 
-                # roll for death based on death_chance at completion
+                # release resources back to the pool
+                resource_manager.release_generic(patient.needs)
+                doc_id = patient_doctor.pop(patient.id, None)
+                if doc_id is not None:
+                    resource_manager.release_doctor(doc_id)
+
+                # roll for death now that treatment's over
                 if random.uniform(0, 100) < patient.death_chance:
                     patient.died = True
+
+        # --------------------------------------------------------
+        # 2. Admit from the waiting queue, most urgent first
+        #    (urgency 1 = most critical, then earliest arrival)
+        # --------------------------------------------------------
+        waiting = [
+            p for p in patients.values()
+            if p.start is None and not p.died
+        ]
+        waiting.sort(key=lambda p: (p.urgency, p.arrival))
+
+        for patient in waiting:
+            if not resource_manager.can_allocate(patient.needs):
+                continue
+
+            doctor = resource_manager.get_available_doctor(patient.required_specialty)
+
+            if doctor is None:
+                # no bed/nurse shortage, just no doctor free yet, try next patient
+                continue
+
+            # allocate everything
+            resource_manager.allocate_generic(patient.needs)
+            resource_manager.assign_doctor(doctor.id, patient.id)
+            patient_doctor[patient.id] = doctor.id
+
+            patient.start = hospital_clock
+            changed = True
 
         if changed:
             await broadcast_patients()
 
 
-from app.models.patient import (
-    Patient,
-    NEEDS_BY_URGENCY,
-    MORTALITY_RANGE,
-    TREATMENT_MINUTES,
-    sample_diagnosis,
-    to_clock,
-)
+@router.on_event("startup")
+async def start_simulation():
+    asyncio.create_task(simulation_loop())
 
 
-router = APIRouter(
-    prefix="/patients",
-    tags=["patients"],
-)
+@router.get("/resources/status")
+async def get_resources():
+    docs = list(resource_manager.doctors.values())
 
+    by_specialty = {}
+    for state in docs:
+        spec = state.doctor.speciality
+        by_specialty.setdefault(spec, {"total": 0, "available": 0})
+        by_specialty[spec]["total"] += 1
+        if state.is_available:
+            by_specialty[spec]["available"] += 1
 
+    return {
+        "clock": hospital_clock,
+        "clock_time": to_clock(hospital_clock),
+        "resources": {
+            r: {"free": resource_manager.free.get(r, 0), "capacity": cap}
+            for r, cap in resource_manager.capacity.items()
+        },
+        "doctors": {
+            "total": len(docs),
+            "available": sum(1 for d in docs if d.is_available),
+            "busy": sum(1 for d in docs if not d.is_available),
+            "by_specialty": by_specialty,
+        },
+        "waiting_count": sum(1 for p in patients.values() if p.start is None and not p.died),
+    }
 # ------------------------------------------------------------------
 # Request models
 # ------------------------------------------------------------------
@@ -100,6 +176,7 @@ def advance_clock(new_time: int):
 
 # Connected frontend clients
 connected_clients: set[WebSocket] = set()
+
 
 
 # ------------------------------------------------------------------

@@ -125,6 +125,13 @@ export function AppSidebar() {
                         </Collapsible>
                     </SidebarMenuItem>
 
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={()=>router.push('/resources')}>
+                            <LayoutDashboard />
+                            <span>Resources</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+
                 </SidebarMenu>
             </SidebarContent>
 
