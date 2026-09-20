@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button"
+"use client";
+
 import {
   Dialog,
   DialogClose,
@@ -7,22 +8,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { SidebarMenuSubButton } from "../ui/sidebar"
+} from "@/components/ui/dialog";
+import { Button } from "../ui/button";
 
-export function AddPatient() {
+export function AddPatient({ open, onOpenChange }) {
   return (
-    <Dialog>
-      <DialogTrigger render={<SidebarMenuSubButton variant="outline">Admit a Patient</SidebarMenuSubButton>} />
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Admit a Patient</DialogTitle>
+
           <DialogDescription>
-            This dialog has a sticky footer that stays visible while the content
-            scrolls.
+            Enter the patient's information below.
           </DialogDescription>
         </DialogHeader>
+
+
         <div className="-mx-4 no-scrollbar max-h-[50vh] overflow-y-auto px-4">
           {Array.from({ length: 10 }).map((_, index) => (
             <p key={index} className="mb-4 leading-normal">
@@ -37,7 +38,7 @@ export function AddPatient() {
           ))}
         </div>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline">Close</Button>} />
+          <DialogClose onClick={()=>onOpenChange(false)} render={<Button variant="outline">Close</Button>} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

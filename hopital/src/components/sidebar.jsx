@@ -1,7 +1,9 @@
 "use client";
+
+import { useState } from "react";
+
 import {
     Sidebar,
-    SidebarGroup,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
@@ -11,32 +13,33 @@ import {
     SidebarMenuSub,
     SidebarMenuSubItem,
     SidebarMenuSubButton,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 import {
     ChevronDown,
     LayoutDashboard,
-} from "lucide-react"
+} from "lucide-react";
 
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { useRouter } from "next/navigation";
-import { AddPatient } from "./patient/Add";
+} from "@/components/ui/collapsible";
+
+import { AddPatient } from "@/components/patient/Add";
 
 
 export function AppSidebar() {
-
-    const router = useRouter();
+    const [addPatientOpen, setAddPatientOpen] = useState(false);
 
     return (
         <Sidebar>
+
             <SidebarHeader className="h-14" />
 
             <SidebarContent className="px-3">
                 <SidebarMenu>
+
                     {/* Dashboard */}
                     <SidebarMenuItem>
                         <SidebarMenuButton>
@@ -49,10 +52,9 @@ export function AppSidebar() {
                     {/* Patients */}
                     <SidebarMenuItem>
                         <Collapsible defaultOpen>
+
                             <CollapsibleTrigger
-                                render={
-                                    <SidebarMenuButton />
-                                }
+                                render={<SidebarMenuButton />}
                             >
                                 <span>Patients</span>
                                 <ChevronDown className="ml-auto" />
@@ -60,12 +62,18 @@ export function AppSidebar() {
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
-                                    <SidebarMenuSubItem>
-                                        {/* <SidebarMenuSubButton onClick={()=>router.push('/patients/add')}>
-                                            Add
-                                        </SidebarMenuSubButton> */}
 
-                                        <AddPatient />
+                                    <SidebarMenuSubItem>
+                                        <SidebarMenuSubButton
+                                            onClick={() => setAddPatientOpen(true)}
+                                        >
+                                            Add
+                                            {/* Dialog */}
+                                            <AddPatient
+                                                open={addPatientOpen}
+                                                onOpenChange={setAddPatientOpen}
+                                            />
+                                        </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
 
                                     <SidebarMenuSubItem>
@@ -73,8 +81,10 @@ export function AppSidebar() {
                                             Manage
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
+
                                 </SidebarMenuSub>
                             </CollapsibleContent>
+
                         </Collapsible>
                     </SidebarMenuItem>
 
@@ -82,10 +92,9 @@ export function AppSidebar() {
                     {/* Doctors */}
                     <SidebarMenuItem>
                         <Collapsible defaultOpen>
+
                             <CollapsibleTrigger
-                                render={
-                                    <SidebarMenuButton />
-                                }
+                                render={<SidebarMenuButton />}
                             >
                                 <span>Doctors</span>
                                 <ChevronDown className="ml-auto" />
@@ -93,6 +102,7 @@ export function AppSidebar() {
 
                             <CollapsibleContent>
                                 <SidebarMenuSub>
+
                                     <SidebarMenuSubItem>
                                         <SidebarMenuSubButton>
                                             Add
@@ -104,8 +114,10 @@ export function AppSidebar() {
                                             Manage
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
+
                                 </SidebarMenuSub>
                             </CollapsibleContent>
+
                         </Collapsible>
                     </SidebarMenuItem>
 
@@ -113,6 +125,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter />
+
         </Sidebar>
-    )
+    );
 }

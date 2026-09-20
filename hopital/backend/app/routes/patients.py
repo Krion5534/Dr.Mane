@@ -10,7 +10,7 @@ router = APIRouter(prefix="/paients", tags=["patients"])
 
 
 
-@router.get("/create")
+@router.get("/admit")
 async def createRoom(
     lang: str,
     db: AsyncSession = Depends(get_db), 

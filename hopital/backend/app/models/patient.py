@@ -27,6 +27,12 @@ class Patient:
         # same needs but with a normal bed, doesnt change anything
         return {("bed" if r == "icu_bed" else r): n for r, n in self.needs.items()}
 
+    @property
+    def death_chance(self):
+        # base risk + extra for every min they waited
+        waited = 0 if self.start is None else self.start - self.arrival
+        return min(100, self.mortality_chance + WAIT_RISK_PER_MINUTE[self.urgency] * waited)
+
     def move_to_regular_bed(self):
         # no icu bed left so they take a normal one, worse odds tho
         self.needs = self.regular_bed_needs()
@@ -59,24 +65,31 @@ TREATMENT_MINUTES = {                                # (shortest, longest) treat
 
 SIM_MINUTES = 1440          # length of one run: 24 hours
 SEED = 42                   # same seed = same patients every run
-ARRIVALS_PER_HOUR = 6       # average new patients per hour
+ARRIVALS_PER_HOUR = 12      # average new patients per hour
 
 WAIT_BONUS = 0.5                 # priority points per minute waited (0 = urgency only)
 AGE_BONUS = 10              # extra priority points for the youngest and oldest patients
 CHILD_AGE = 12              # younger than this gets the bonus
 ELDERLY_AGE = 65            # this age or older gets the bonus
 
+WAIT_RISK_PER_MINUTE = {            # extra death chnace (points) for every min waited
+    1: 0.3,                         # critical ones cant wait
+    2: 0.15,
+    3: 0.05,
+    4: 0.0,
+}
+
 # ------------------------------------------------- staffing by time of day
 STAFFING = {                         # doctors and nurses on duty in each period
-    "dead":   {"doctor": 6,  "nurse": 11},
-    "normal": {"doctor": 8,  "nurse": 14},
-    "peak":   {"doctor": 10, "nurse": 17},
+    "dead":   {"doctor": 5,  "nurse": 9},
+    "normal": {"doctor": 7,  "nurse": 12},
+    "peak":   {"doctor": 9, "nurse": 15},
 }
 PEAK_HOURS = [(9, 13), (17, 21)]     # 09:00-13:00 and 17:00-21:00
 DEAD_HOURS = [(0, 6), (22, 24)]      # 22:00-06:00; every other hour is "normal"
 
 # beds are fixed; **STAFFING["normal"] copies in the doctor and nurse numbers
-CAPACITY = {"bed": 6, "icu_bed": 4, **STAFFING["normal"]}
+CAPACITY = {"bed": 25, "icu_bed": 20, **STAFFING["normal"]}
 
 NEEDS_BY_URGENCY = {
     1: {"icu_bed": 1, "doctor": 1, "nurse": 2},
@@ -93,13 +106,8 @@ SURGE_ARRIVAL_MULTIPLIER = 1.5       # patients arrive this many times faster (1
 SURGE_URGENCY_MIX = {1: 0.15, 2: 0.25, 3: 0.35, 4: 0.25}   # levels 1-2 = 40%, up from 30%
 
 # ------------------------------------------------------------- mortality
-MORTALITY_RANGE = {                 # (lowest, highest) chance of dying per urgency level
-    1: (40, 60),                    # more urgent = way more likly to die
-    2: (25, 40),
-    3: (10, 20),
-    4: (5, 10),
-}
-ICU_FALLBACK_MORTALITY_BONUS = 20   # icu guy in a normal bed = worse odds
+MORTALITY_RANGE = {1: (10, 17), 2: (5, 12), 3: (2, 5), 4: (0, 2)}
+ICU_FALLBACK_MORTALITY_BONUS = 7
 
 # ------------------------------------------------------------- clock time
 START = datetime(2026, 9, 19, 8, 0)     # simulation minute 0 = 8:00 AM

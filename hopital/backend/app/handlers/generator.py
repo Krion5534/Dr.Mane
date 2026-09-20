@@ -1,5 +1,5 @@
 import random
-from patient import (Patient, URGENCY_MIX, SURGE_URGENCY_MIX, TREATMENT_MINUTES,
+from app.models.patient import (Patient, URGENCY_MIX, SURGE_URGENCY_MIX, TREATMENT_MINUTES,
                      ARRIVALS_PER_HOUR, SURGE_ARRIVAL_MULTIPLIER, SURGE_CHANCE,
                      SURGE_CHECK_MINUTES, SURGE_DURATION_MINUTES, SIM_MINUTES,
                      NEEDS_BY_URGENCY, MORTALITY_RANGE)
