@@ -105,7 +105,7 @@ export default function PatientManager() {
     const wsUrl =
       API_URL.replace("http://", "ws://")
         .replace("https://", "wss://") +
-      "/patients/view/all";
+      "/api/patients/view/all";
 
     const socket = new WebSocket(wsUrl);
 
