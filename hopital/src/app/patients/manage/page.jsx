@@ -77,7 +77,7 @@ import {
 } from "@/components/ui/select";
 
 
-const API_URL = "https://shiny-giggle-675qg475595c57r4-8000.app.github.dev";
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 
 export default function PatientManager() {

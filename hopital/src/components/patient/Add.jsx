@@ -43,11 +43,14 @@ export function AddPatient({ open, onOpenChange }) {
   const [diagnosis, setDiagnosis] = useState("");
 
 
+  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const response = await fetch(
-      "http://localhost:8000/patients/admit",
+      backend_url+"/patients/admit",
       {
         method: "POST",
         headers: {
