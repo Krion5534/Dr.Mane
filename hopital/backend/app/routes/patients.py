@@ -1,19 +1,13 @@
 from fastapi import APIRouter, Request, Query, WebSocket, WebSocketDisconnect, Depends
-from app.db.database import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.handlers.user import fetchUser
 from fastapi.security import OAuth2PasswordBearer
-from app.handlers.client_rooms import join_room, leave_room, update_code, broadcast
 from fastapi.security import OAuth2PasswordBearer
-from app.utils.jwt import extractUserId
 from fastapi import HTTPException
-from app.models.broadcast_messages import Message
-from app.models.models import Room
-from app.handlers.execute import executeCode
 
 
-router = APIRouter(prefix="/rooms", tags=["rooms"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
+router = APIRouter(prefix="/paients", tags=["patients"])
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
+
+
 
 
 @router.get("/create")
@@ -39,12 +33,10 @@ async def createRoom(
     
         
 
-@router.websocket("/{room_code}")
+@router.websocket("/view/all")
 async def websocket(
     websocket: WebSocket,
-    room_code: str,
-    token: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    token: str | None = None
 ):
     
     if not token:
@@ -54,6 +46,9 @@ async def websocket(
     user = await fetchUser(token=token, db=db)
     
     room = await join_room(room_id=room_code, user_id=user["id"], username=user["display_name"], websocket=websocket, db=db)
+
+    fetchPatients()
+
     
     try:
         while True:

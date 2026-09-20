@@ -13,5 +13,6 @@ async def get_user(request: Request):
 
 @router.get("/profile")
 async def fetchUserProfile(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    user = await fetchUser(db=db, token=token)
+    # user = await fetchUser(db=db, token=token)
+    user = None
     return user
