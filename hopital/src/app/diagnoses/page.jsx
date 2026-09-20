@@ -48,7 +48,7 @@ export default function DiagnosesPage() {
 
 const getStatus = (p) => ({
   label: p.status,
-  pct: p.end ? 100 : p.start ? Math.min(99, ((hospital_clock_estimate - p.start) / p.duration) * 100) : 0,
+  pct: p.end ? 100 : p.start ? 50 : 0,
 });
 
   const filtered = patients.filter((p) =>
