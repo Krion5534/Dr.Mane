@@ -30,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 
 export function AddPatient({ open, onOpenChange }) {
