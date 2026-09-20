@@ -49,7 +49,7 @@ export function AddPatient({ open, onOpenChange }) {
     e.preventDefault();
 
     const response = await fetch(
-      backend_url+"/patients/admit",
+      backend_url+"/api/patients/admit",
       {
         method: "POST",
         headers: {
@@ -272,7 +272,7 @@ export function AddPatient({ open, onOpenChange }) {
             Cancel
           </Button>
 
-          <Button type="submit">
+          <Button onClick={handleSubmit}>
             Admit Patient
           </Button>
         </DialogFooter>

@@ -168,7 +168,7 @@ export default function PatientManager() {
     }
 
     const response = await fetch(
-      `${API_URL}/patients/${editPatient.id}`,
+      `${API_URL}/api/patients/${editPatient.id}`,
       {
         method: "PATCH",
 
