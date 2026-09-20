@@ -1,47 +1,65 @@
+import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
+
+
+@dataclass
+class Doctor:
+    id: int
+    speciality: str
 
 
 @dataclass
 class Patient:
     id: int
     age: int
-    arrival: int                    # minute the patient arrives
-    urgency: int                    # 1-4, with 1 = most urgent
-    needs: dict                     # what they need, e.g. {"bed": 1}
-    duration: int                   # minutes of treatment
-    start: Optional[int] = None     # minute treatment begins (None while waiting)
-    end: Optional[int] = None       # minute treatment ends (None until done)
-    during_surge: bool = False      # True if they arrived during an emergency surge
-    mortality_chance: int = 0       # 0-100, chance of dying, set from urgency
-    downgraded: bool = False        # icu guy who got a regular bed insted
-    died: bool = False              # rolled once when treatment ends
+    arrival: int
+    urgency: int
+    needs: dict
+    duration: int
+    diagnosis: Optional[str] = None
+    start: Optional[int] = None
+    end: Optional[int] = None
+    during_surge: bool = False
+    mortality_chance: int = 0
+    downgraded: bool = False
+    died: bool = False
+    name: str = ""      # typed in for manual patients, auto for generated ones
+
+    def __post_init__(self):
+        if not self.name:
+            self.name = f"Patient {self.id}"
+
+    @property
+    def required_specialty(self) -> str:
+        # kids always need ped, general doc if diagnosis missing
+        if self.age < PEDIATRIC_AGE_LIMIT:
+            return "Pediatrician"
+        if self.diagnosis is None:
+            return "General Doctor"
+        return DIAGNOSIS_TO_SPECIALTY.get(self.diagnosis, "General Doctor")
 
     @property
     def wait(self):
-        """Minutes waited. None if treatment not started yet."""
         return None if self.start is None else self.start - self.arrival
 
     def regular_bed_needs(self):
-        # same needs but with a normal bed, doesnt change anything
         return {("bed" if r == "icu_bed" else r): n for r, n in self.needs.items()}
 
     @property
     def death_chance(self):
-        # base risk + extra for every min they waited
         waited = 0 if self.start is None else self.start - self.arrival
-        return min(100, self.mortality_chance + WAIT_RISK_PER_MINUTE[self.urgency] * waited)
+        risk_per_min = WAIT_RISK_PER_MINUTE.get(self.urgency, 0.0)
+        return min(100, self.mortality_chance + risk_per_min * waited)
 
     def move_to_regular_bed(self):
-        # no icu bed left so they take a normal one, worse odds tho
         self.needs = self.regular_bed_needs()
         self.mortality_chance = min(100, self.mortality_chance + ICU_FALLBACK_MORTALITY_BONUS)
         self.downgraded = True
 
     @property
     def arrival_time(self):
-        """Arrival as a clock string, e.g. '09:15'."""
         return to_clock(self.arrival)
 
     @property
@@ -54,41 +72,83 @@ class Patient:
 
 
 # ---------------------------------------------------------------- settings
-URGENCY_MIX = {1: 0.10, 2: 0.20, 3: 0.40, 4: 0.30}   # share of patients per level (must sum to 1)
-URGENCY_WEIGHT = {1: 100, 2: 50, 3: 20, 4: 5}        # starting priority points per level
-TREATMENT_MINUTES = {                                # (shortest, longest) treatment time per level
+PEDIATRIC_AGE_LIMIT = 16
+
+DIAGNOSIS_POOL = {
+    "high_urgency": [
+        ("Heart Attack", "Cardiologist"),
+        ("Cardiac Arrest", "Cardiologist"),
+        ("Stroke", "Neurologist"),
+        ("Brain Hemorrhage", "Neurologist"),
+    ],
+    "low_urgency": [
+        ("Fracture", "Orthopedic"),
+        ("Joint Dislocation", "Orthopedic"),
+        ("Severe Rash", "Dermatologist"),
+        ("Skin Infection", "Dermatologist"),
+    ],
+    "pediatric": [
+        ("Pediatric Fever", "Pediatrician"),
+        ("Childhood Asthma", "Pediatrician"),
+    ]
+}
+
+DIAGNOSIS_TO_SPECIALTY = {
+    diag: spec
+    for category in DIAGNOSIS_POOL.values()
+    for diag, spec in category
+}
+
+# for the dropdowns in the manual add form
+URGENCY_LABELS = {1: "Critical", 2: "High", 3: "Medium", 4: "Low"}
+DIAGNOSIS_OPTIONS = list(DIAGNOSIS_TO_SPECIALTY.keys())
+
+URGENCY_MIX = {1: 0.10, 2: 0.20, 3: 0.40, 4: 0.30}
+URGENCY_WEIGHT = {1: 100, 2: 50, 3: 20, 4: 5}
+TREATMENT_MINUTES = {
     1: (60, 180),
     2: (45, 120),
     3: (30, 90),
     4: (15, 45),
 }
 
-SIM_MINUTES = 1440          # length of one run: 24 hours
-SEED = 42                   # same seed = same patients every run
-ARRIVALS_PER_HOUR = 12      # average new patients per hour
+SIM_MINUTES = 1440
+SEED = 42
+ARRIVALS_PER_HOUR = 12
 
-WAIT_BONUS = 0.5                 # priority points per minute waited (0 = urgency only)
-AGE_BONUS = 10              # extra priority points for the youngest and oldest patients
-CHILD_AGE = 12              # younger than this gets the bonus
-ELDERLY_AGE = 65            # this age or older gets the bonus
+WAIT_BONUS = 0.5
+AGE_BONUS = 10
+CHILD_AGE = 12
+ELDERLY_AGE = 65
 
-WAIT_RISK_PER_MINUTE = {            # extra death chnace (points) for every min waited
-    1: 0.3,                         # critical ones cant wait
+WAIT_RISK_PER_MINUTE = {
+    1: 0.3,
     2: 0.15,
     3: 0.05,
     4: 0.0,
 }
 
-# ------------------------------------------------- staffing by time of day
-STAFFING = {                         # doctors and nurses on duty in each period
-    "dead":   {"doctor": 5,  "nurse": 9},
-    "normal": {"doctor": 7,  "nurse": 12},
-    "peak":   {"doctor": 9, "nurse": 15},
+DOCTOR_SPECIALITIES = {
+    'General Doctor': 0.4,
+    'Pediatrician': 0.2,
+    'Orthopedic': 0.2,
+    'Neurologist': 0.05,
+    'Dermatologist': 0.1,
+    'Cardiologist': 0.05
 }
-PEAK_HOURS = [(9, 13), (17, 21)]     # 09:00-13:00 and 17:00-21:00
-DEAD_HOURS = [(0, 6), (22, 24)]      # 22:00-06:00; every other hour is "normal"
 
-# beds are fixed; **STAFFING["normal"] copies in the doctor and nurse numbers
+DOCTOR_COUNT_NORMAL = 40
+DOCTOR_COUNT_PEAK = 60
+DOCTOR_COUNT_DEAD = 30
+
+STAFFING = {
+    "dead":   {"doctor": DOCTOR_COUNT_DEAD,   "nurse": 20},
+    "normal": {"doctor": DOCTOR_COUNT_NORMAL, "nurse": 24},
+    "peak":   {"doctor": DOCTOR_COUNT_PEAK,   "nurse": 30},
+}
+PEAK_HOURS = [(9, 13), (17, 21)]
+DEAD_HOURS = [(0, 6), (22, 24)]
+
 CAPACITY = {"bed": 25, "icu_bed": 20, **STAFFING["normal"]}
 
 NEEDS_BY_URGENCY = {
@@ -98,31 +158,45 @@ NEEDS_BY_URGENCY = {
     4: {"bed": 1, "nurse": 1},
 }
 
-# ------------------------------------------------------ emergency surges
-SURGE_CHANCE = 0.10                  # chance of a surge in each check period
-SURGE_CHECK_MINUTES = 720            # roll the dice once every 12 hours
-SURGE_DURATION_MINUTES = (120, 240)  # a surge lasts between 2 and 4 hours
-SURGE_ARRIVAL_MULTIPLIER = 1.5       # patients arrive this many times faster (1 = no change)
-SURGE_URGENCY_MIX = {1: 0.15, 2: 0.25, 3: 0.35, 4: 0.25}   # levels 1-2 = 40%, up from 30%
+SURGE_CHANCE = 0.10
+SURGE_CHECK_MINUTES = 720
+SURGE_DURATION_MINUTES = (120, 240)
+SURGE_ARRIVAL_MULTIPLIER = 1.5
+SURGE_URGENCY_MIX = {1: 0.15, 2: 0.25, 3: 0.35, 4: 0.25}
 
-# ------------------------------------------------------------- mortality
 MORTALITY_RANGE = {1: (10, 17), 2: (5, 12), 3: (2, 5), 4: (0, 2)}
 ICU_FALLBACK_MORTALITY_BONUS = 7
 
-# ------------------------------------------------------------- clock time
-START = datetime(2026, 9, 19, 8, 0)     # simulation minute 0 = 8:00 AM
+START = datetime(2026, 9, 19, 8, 0)
 
 
 def to_clock(minute):
-    """Turn a simulation minute into a clock string, e.g. 75 -> '09:15'."""
     return (START + timedelta(minutes=minute)).strftime("%H:%M")
 
 
 def period_at(minute):
-    """'peak', 'dead' or 'normal' for a simulation minute."""
     hour = (START + timedelta(minutes=minute)).hour
     if any(a <= hour < b for a, b in PEAK_HOURS):
         return "peak"
     if any(a <= hour < b for a, b in DEAD_HOURS):
         return "dead"
     return "normal"
+
+
+def sample_diagnosis(age: int, urgency: int, rng=None) -> Optional[str]:
+    r = rng if rng is not None else random      # pass the seeded rng so runs repeat
+    if age < PEDIATRIC_AGE_LIMIT:
+        return r.choice([d for d, _ in DIAGNOSIS_POOL["pediatric"]])
+    if urgency in (1, 2):
+        return r.choice([d for d, _ in DIAGNOSIS_POOL["high_urgency"]])
+    elif urgency in (3, 4):
+        return r.choice([d for d, _ in DIAGNOSIS_POOL["low_urgency"]])
+    return None
+
+
+def generate_doctors(count: int, seed: Optional[int] = None) -> List[Doctor]:
+    rng = random.Random(seed)       # own rng, dont touch the global one
+    specs = list(DOCTOR_SPECIALITIES.keys())
+    weights = list(DOCTOR_SPECIALITIES.values())
+    sampled_specs = rng.choices(specs, weights=weights, k=count)
+    return [Doctor(id=i + 1, speciality=spec) for i, spec in enumerate(sampled_specs)]

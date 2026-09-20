@@ -37,6 +37,49 @@ export function AddPatient({ open, onOpenChange }) {
 
   const [isChild, setChild] = useState(true);
   const [highUrgency, setHighUrgency] = useState(false);
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [urgency, setUrgency] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const response = await fetch(
+      "http://localhost:8000/patients/admit",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          age: Number(age),
+          urgency: Number(urgency),
+          diagnosis,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error(data);
+      return;
+    }
+
+    console.log("Admitted:", data.patient);
+
+    onOpenChange(false);
+
+    // optional reset
+    setName("");
+    setAge("");
+    setUrgency("");
+    setDiagnosis("");
+  };
+
 
   const handleAge = (e) => {
     let age = e.target.value
@@ -67,7 +110,8 @@ export function AddPatient({ open, onOpenChange }) {
         </DialogHeader>
 
         <div className="mx-4 max-h-[60vh] overflow-y-auto px-4">
-          <form className="space-y-6">
+          <form className="space-y-6"
+            onSubmit={handleSubmit}>
 
             {/* Patient Name */}
             <Field>
@@ -81,6 +125,8 @@ export function AddPatient({ open, onOpenChange }) {
                   name="name"
                   type="text"
                   placeholder="e.g. Krion"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
 
                 <FieldDescription>
@@ -103,32 +149,16 @@ export function AddPatient({ open, onOpenChange }) {
                   type="number"
                   min="0"
                   max="120"
-                  onChange={(e) => handleAge(e)}
+                  value={age}
+                  onChange={(e) => {
+                    setAge(e.target.value);
+                    handleAge(e);
+                  }}
                   placeholder="e.g. 67"
                 />
               </FieldContent>
             </Field>
 
-
-            {/* Arrival */}
-            {/* <Field>
-              <FieldLabel htmlFor="patient-arrival">
-                Arrival Time
-              </FieldLabel>
-
-              <FieldContent>
-                <Input
-                  id="patient-arrival"
-                  name="arrival"
-                  type="datetime-local"
-                  // placeholder="e.g. 120"
-                />
-
-                <FieldDescription>
-                  Time of arrival in minutes.
-                </FieldDescription>
-              </FieldContent>
-            </Field> */}
 
 
             {/* Urgency */}
@@ -138,7 +168,9 @@ export function AddPatient({ open, onOpenChange }) {
               </FieldLabel>
 
               <FieldContent>
-                <Select name="urgency">
+                <Select name="urgency"
+                  value={urgency}
+                  onValueChange={setUrgency}>
                   <SelectTrigger id="patient-urgency">
                     <SelectValue placeholder="Select urgency" />
                   </SelectTrigger>
@@ -178,7 +210,12 @@ export function AddPatient({ open, onOpenChange }) {
               </FieldLabel>
 
               <FieldContent>
-                <Select name="diagnosis" onValueChange={(value) => handleUrgency(value)}>
+                <Select name="diagnosis"
+                  value={diagnosis}
+                  onValueChange={(value) => {
+                    setDiagnosis(value);
+                    handleUrgency(value);
+                  }}>
                   <SelectTrigger id="patient-diagnosis">
                     <SelectValue placeholder="Select diagnosis" />
                   </SelectTrigger>

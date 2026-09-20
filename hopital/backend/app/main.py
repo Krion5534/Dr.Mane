@@ -1,13 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
-from app.routes import user
 from app.routes import patients
-from app.routes import rooms
 from fastapi import APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.database import init_db
 
 app = FastAPI()
 
@@ -24,18 +21,16 @@ app.add_middleware(
 api_router = APIRouter(prefix="/api") # API Router
 
 # API Endpoints
-api_router.include_router(auth.router)
-api_router.include_router(user.router)
-api_router.include_router(rooms.router)
+# api_router.include_router(rooms.router)
 api_router.include_router(patients.router)
 
 
 # Router Includes
 app.include_router(api_router)
 
-@app.on_event("startup")
-async def startup():
-    await init_db()
+# @app.on_event("startup")
+# async def startup():
+#     await init_db()
 
 
 if __name__ == "__main__":

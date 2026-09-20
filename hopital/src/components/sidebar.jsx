@@ -80,7 +80,8 @@ export function AppSidebar() {
                                     </SidebarMenuSubItem>
 
                                     <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton>
+                                        <SidebarMenuSubButton
+                                        onClick={()=>router.push('/patients/manage')}>
                                             Manage
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
