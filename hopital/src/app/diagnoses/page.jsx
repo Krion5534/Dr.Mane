@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -12,26 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const DIAGNOSIS_OPTIONS = [
-  "Heart Attack",
-  "Cardiac Arrest",
-  "Stroke",
-  "Brain Hemorrhage",
-  "Fracture",
-  "Joint Dislocation",
-  "Severe Rash",
-  "Skin Infection",
-  "Pediatric Fever",
-  "Childhood Asthma",
-];
 
 const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -39,34 +20,43 @@ export default function DiagnosesPage() {
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const simState = useRef({}); // id -> { startedAt }
 
   const fetchPatients = async () => {
     const res = await fetch(`${backend_url}/api/patients/all`, { cache: "no-store" });
     const data = await res.json();
+
+    for (const p of data.patients || []) {
+      if (!simState.current[p.id]) {
+        simState.current[p.id] = { startedAt: Date.now() };
+      }
+    }
+
     setPatients(data.patients || []);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchPatients();
+    const poll = setInterval(fetchPatients, 5000);
+    const tick = setInterval(() => setPatients((p) => [...p]), 500); // force rerender for progress bars
+    return () => {
+      clearInterval(poll);
+      clearInterval(tick);
+    };
   }, []);
 
-  const updateDiagnosis = async (patientId, diagnosis) => {
-    // optimistic update
-    setPatients((prev) =>
-      prev.map((p) => (p.id === patientId ? { ...p, diagnosis } : p))
-    );
+  const getStatus = (p) => {
+    const sim = simState.current[p.id];
+    if (!sim) return { label: "Waiting", pct: 0 };
 
-    const res = await fetch(`${backend_url}/api/patients/${patientId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ diagnosis }),
-    });
+    const elapsedSec = (Date.now() - sim.startedAt) / 1000;
+    const durationSec = p.duration; // minutes treated as seconds for demo speed
 
-    if (!res.ok) {
-      // revert on failure
-      fetchPatients();
+    if (elapsedSec >= durationSec) {
+      return { label: "Diagnosed", pct: 100 };
     }
+    return { label: "In Treatment", pct: Math.min(99, (elapsedSec / durationSec) * 100) };
   };
 
   const filtered = patients.filter((p) =>
@@ -76,7 +66,7 @@ export default function DiagnosesPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Manage Diagnoses</h1>
+        <h1 className="text-xl font-semibold">Diagnosis Status</h1>
         <Input
           placeholder="Search patient..."
           value={search}
@@ -90,58 +80,57 @@ export default function DiagnosesPage() {
           <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Patient</TableHead>
-              <TableHead>Age</TableHead>
-              <TableHead>Urgency</TableHead>
-              <TableHead>Specialty</TableHead>
               <TableHead>Diagnosis</TableHead>
+              <TableHead>Urgency</TableHead>
+              <TableHead>Wait</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-40">Progress</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filtered.length ? (
-              filtered.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell>{p.age}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{p.urgency}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-muted-foreground">
-                      {p.required_specialty}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={p.diagnosis || ""}
-                      onValueChange={(value) => updateDiagnosis(p.id, value)}
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Select diagnosis" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(p.age < 16
-                          ? ["Pediatric Fever", "Childhood Asthma"]
-                          : DIAGNOSIS_OPTIONS
-                        ).map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {d}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))
+              filtered.map((p) => {
+                const status = getStatus(p);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>{p.diagnosis ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{p.urgency}</Badge>
+                    </TableCell>
+                    <TableCell>{p.arrival_time}</TableCell>
+                    <TableCell>{p.duration} min</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          status.label === "Diagnosed"
+                            ? "border-green-500 text-green-500"
+                            : status.label === "In Treatment"
+                            ? "border-yellow-500 text-yellow-500"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Progress value={status.pct} />
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No patients found.
                 </TableCell>
               </TableRow>
