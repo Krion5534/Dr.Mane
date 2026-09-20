@@ -1,4 +1,4 @@
-# MedFlow: Hospital Resource Allocation Simulator
+# Dr.Mane: Hospital Resource Allocation Simulator
 
 Built for **Hack-a-Matics** by `Big P` (`Shanmukha, Pallav E, Prajwal Sathyaprakash`).
 
